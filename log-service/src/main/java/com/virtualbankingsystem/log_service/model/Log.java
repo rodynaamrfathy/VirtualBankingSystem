@@ -2,13 +2,17 @@ package com.virtualbankingsystem.log_service.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.awt.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Data
-@Table (name ="logs")
+@Table (name ="logging_service_db")
+@Getter
+@Setter
 public class Log {
 
     @Id

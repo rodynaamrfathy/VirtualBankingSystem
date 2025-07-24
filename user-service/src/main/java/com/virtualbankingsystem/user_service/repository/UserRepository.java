@@ -1,4 +1,4 @@
-package com.virtualbankingsystem.user_service.userRepository;
+package com.virtualbankingsystem.user_service.repository;
 
 import com.virtualbankingsystem.user_service.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;

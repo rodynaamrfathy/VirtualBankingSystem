@@ -2,7 +2,7 @@ package com.virtualbankingsystem.user_service.service;
 
 import com.virtualbankingsystem.user_service.dto.*;
 import com.virtualbankingsystem.user_service.model.User;
-import com.virtualbankingsystem.user_service.userRepository.UserRepository;
+import com.virtualbankingsystem.user_service.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
