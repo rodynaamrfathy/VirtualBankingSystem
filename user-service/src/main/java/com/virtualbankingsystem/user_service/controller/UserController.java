@@ -28,7 +28,7 @@ public class UserController {
     public ResponseEntity<UserResponse> register(@RequestBody RegisterRequest request) {
         loggerProducer.logRequest(request); // Log the incoming request
 
-        UserResponse response = userService.registerUser(request);
+        UserResponse response = userService.registerUser(request); // service
 
         loggerProducer.logResponse(response); // Log the outgoing response
         return ResponseEntity.status(201).body(response);
