@@ -21,7 +21,7 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public UserResponse registerUser(RegisterRequest request) {
+    public RegisterResponse registerUser(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername()) || userRepository.existsByEmail(request.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username or email already exists.");
         }
@@ -35,12 +35,10 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
-        return new UserResponse(
+        return new RegisterResponse(
                 savedUser.getUserId(),
                 savedUser.getUsername(),
-                savedUser.getEmail(),
-                savedUser.getFirstName(),
-                savedUser.getLastName()
+                "User registered successfully."
         );
     }
 

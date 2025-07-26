@@ -25,10 +25,10 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
         loggerProducer.logRequest(request); // Log the incoming request
 
-        UserResponse response = userService.registerUser(request);
+        RegisterResponse response = userService.registerUser(request);
 
         loggerProducer.logResponse(response); // Log the outgoing response
         return ResponseEntity.status(201).body(response);

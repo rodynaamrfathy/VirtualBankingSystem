@@ -3,8 +3,11 @@ package com.virtualbankingsystem.account_service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,6 +48,19 @@ public class AccountService {
         to.setBalance(to.getBalance().add(amount));
         accountRepository.save(from);
         accountRepository.save(to);
+    }
+
+    @Scheduled(cron = "0 0 * * * *") // Every hour
+    public void inactivateStaleAccounts() {
+        List<Account> activeAccounts = accountRepository.findAll().stream()
+                .filter(a -> a.getStatus() == Account.AccountStatus.ACTIVE)
+                .toList();
+        for (Account account : activeAccounts) {
+            if (Duration.between(account.getUpdatedAt(), LocalDateTime.now()).toHours() > 24) {
+                account.setStatus(Account.AccountStatus.INACTIVE);
+                accountRepository.save(account);
+            }
+        }
     }
 
     private String generateAccountNumber() {
