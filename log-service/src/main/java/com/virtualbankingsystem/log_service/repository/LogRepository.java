@@ -7,3 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface LogRepository extends JpaRepository<Log, Long> {
 }
+//Spring Data JPA automatically generates the SQL to save the Log entity
+// into the database configured in application.properties.
