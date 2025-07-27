@@ -1,9 +1,9 @@
 server:
-  port: 8083
+  port: 8085
 
 spring:
   application:
-    name: log-service
+    name: bff-service
 
   kafka:
     bootstrap-servers: localhost:9092

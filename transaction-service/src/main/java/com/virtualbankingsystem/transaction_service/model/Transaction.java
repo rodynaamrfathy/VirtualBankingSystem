@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "transaction_service_db")
 @Data
 public class Transaction {
     @Id
