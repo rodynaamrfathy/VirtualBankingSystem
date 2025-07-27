@@ -24,7 +24,7 @@ public class DashboardController {
 
     @GetMapping("/dashboard/{userId}")
     public ResponseEntity getDashboard(@PathVariable UUID userId) {
-    
+
     }
 }
 

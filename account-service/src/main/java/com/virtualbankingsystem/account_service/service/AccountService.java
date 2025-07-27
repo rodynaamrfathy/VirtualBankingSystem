@@ -1,7 +1,12 @@
 package com.virtualbankingsystem.account_service.service;
 
+import com.virtualbankingsystem.account_service.client.UserClient;
+import com.virtualbankingsystem.account_service.dto.AccountResponse;
+import com.virtualbankingsystem.account_service.dto.CreateAccountRequest;
+import com.virtualbankingsystem.account_service.dto.TransferRequest;
 import com.virtualbankingsystem.account_service.repository.AccountRepository;
 import com.virtualbankingsystem.account_service.model.Account;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,61 +17,71 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class AccountService {
-    @Autowired
-    private AccountRepository accountRepository;
 
-    public Account createAccount(UUID userId, Account.AccountType accountType, BigDecimal initialBalance) {
+    private final AccountRepository accountRepository;
+    private final UserClient userClient;
+
+    public AccountResponse createAccount(CreateAccountRequest request) {
+        // Validate user
+        userClient.getUser(request.getUserId());
+
         Account account = new Account();
-        account.setUserId(userId);
-        account.setAccountType(accountType);
+        account.setUserId(request.getUserId());
+        account.setAccountType(Account.AccountType.valueOf(request.getAccountType()));
         account.setAccountNumber(generateAccountNumber());
-        account.setBalance(initialBalance);
+        account.setBalance(request.getInitialBalance());
         account.setStatus(Account.AccountStatus.ACTIVE);
-        return accountRepository.save(account);
+
+        Account saved = accountRepository.save(account);
+        return AccountResponse.builder()
+                .accountId(saved.getId())
+                .accountNumber(saved.getAccountNumber())
+                .accountType(saved.getAccountType().name())
+                .balance(saved.getBalance())
+                .status(saved.getStatus().name())
+                .build();
     }
 
     public Optional<Account> getAccount(UUID accountId) {
         return accountRepository.findById(accountId);
     }
 
-    public List<Account> getAccountsByUserId(UUID userId) {
-        return accountRepository.findByUserId(userId);
+    public List<AccountResponse> getAccountsByUser(UUID userId) {
+        return accountRepository.findByUserId(userId).stream().map(acc -> AccountResponse.builder()
+                .accountId(acc.getId())
+                .accountNumber(acc.getAccountNumber())
+                .accountType(acc.getAccountType().name())
+                .balance(acc.getBalance())
+                .status(acc.getStatus().name())
+                .build()
+        ).toList();
     }
 
     @Transactional
-    public void transfer(UUID fromAccountId, UUID toAccountId, BigDecimal amount) {
-        Account from = accountRepository.findById(fromAccountId)
-                .orElseThrow(() -> new IllegalArgumentException("Account with ID " + fromAccountId + " not found."));
-        Account to = accountRepository.findById(toAccountId)
-                .orElseThrow(() -> new IllegalArgumentException("Account with ID " + toAccountId + " not found."));
-        if (from.getBalance().compareTo(amount) < 0) {
-            throw new IllegalArgumentException("Insufficient balance.");
+    public void transfer(TransferRequest request) {
+        Account from = accountRepository.findById(request.getFromAccountId())
+                .orElseThrow(() -> new IllegalArgumentException("Source account not found"));
+        Account to = accountRepository.findById(request.getToAccountId())
+                .orElseThrow(() -> new IllegalArgumentException("Destination account not found"));
+
+        if (from.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new IllegalArgumentException("Insufficient funds.");
         }
-        from.setBalance(from.getBalance().subtract(amount));
-        to.setBalance(to.getBalance().add(amount));
+
+        from.setBalance(from.getBalance().subtract(request.getAmount()));
+        to.setBalance(to.getBalance().add(request.getAmount()));
+
         accountRepository.save(from);
         accountRepository.save(to);
     }
 
-    @Scheduled(cron = "0 0 * * * *") // Every hour
-    public void inactivateStaleAccounts() {
-        List<Account> activeAccounts = accountRepository.findAll().stream()
-                .filter(a -> a.getStatus() == Account.AccountStatus.ACTIVE)
-                .toList();
-        for (Account account : activeAccounts) {
-            if (Duration.between(account.getUpdatedAt(), LocalDateTime.now()).toHours() > 24) {
-                account.setStatus(Account.AccountStatus.INACTIVE);
-                accountRepository.save(account);
-            }
-        }
-    }
-
     private String generateAccountNumber() {
-        // Simple random 10-digit number, for demo only
-        return String.valueOf((long)(Math.random() * 1_000_000_0000L));
+        return String.format("%010d", new Random().nextInt(1_000_000_000));
     }
-} 
+}
