@@ -68,10 +68,9 @@ public class UserService {
 
         return new UserResponse(
                 user.getUserId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName()
+                user.getUsername()
+                
+            
         );
     }
 }

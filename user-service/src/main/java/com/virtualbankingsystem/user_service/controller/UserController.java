@@ -3,10 +3,16 @@ package com.virtualbankingsystem.user_service.controller;
 import com.virtualbankingsystem.user_service.dto.*;
 import com.virtualbankingsystem.user_service.producer.RequestLoggerProducer;
 import com.virtualbankingsystem.user_service.service.UserService;
+
+
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,6 +23,9 @@ public class UserController {
     private UserService userService;
 
     private RequestLoggerProducer loggerProducer;
+
+   
+
 
     @Autowired
     public UserController(UserService userService, RequestLoggerProducer loggerProducer) {
@@ -56,4 +65,5 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    
 }

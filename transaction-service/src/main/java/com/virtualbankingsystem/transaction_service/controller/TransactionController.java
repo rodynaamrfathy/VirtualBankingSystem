@@ -38,10 +38,13 @@ public class TransactionController {
             UUID toAccountId = UUID.fromString((String) request.get("toAccountId"));
             BigDecimal amount = new BigDecimal(request.get("amount").toString());
             String description = (String) request.get("description");
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Amount must be positive.");
+            }
             Transaction transaction = transactionService.initiateTransfer(fromAccountId, toAccountId, amount, description);
             Map<String, Object> response = new HashMap<>();
             response.put("transactionId", transaction.getTransactionId());
-            response.put("status", transaction.getStatus());
+            response.put("status", "Initiated");
             response.put("timestamp", transaction.getTimestamp());
             kafkaLogProducer.sendLog(toJson(response), "Response");
             return ResponseEntity.ok(response);
@@ -61,13 +64,14 @@ public class TransactionController {
         kafkaLogProducer.sendLog(toJson(request), "Request");
         try {
             UUID transactionId = UUID.fromString((String) request.get("transactionId"));
-            boolean success = true; // Placeholder for actual logic
-            Optional<Transaction> transactionOpt = transactionService.executeTransfer(transactionId, success);
+            // Here, you should call Account Service to actually perform the transfer and check for errors.
+            // For now, we assume success if the transaction exists.
+            Optional<Transaction> transactionOpt = transactionService.executeTransfer(transactionId, true);
             if (transactionOpt.isPresent()) {
                 Transaction transaction = transactionOpt.get();
                 Map<String, Object> response = new HashMap<>();
                 response.put("transactionId", transaction.getTransactionId());
-                response.put("status", transaction.getStatus());
+                response.put("status", transaction.getStatus().name().substring(0, 1).toUpperCase() + transaction.getStatus().name().substring(1).toLowerCase());
                 response.put("timestamp", transaction.getTimestamp());
                 kafkaLogProducer.sendLog(toJson(response), "Response");
                 return ResponseEntity.ok(response);

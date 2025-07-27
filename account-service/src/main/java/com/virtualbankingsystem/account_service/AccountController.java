@@ -27,19 +27,36 @@ public class AccountController {
         try {
             UUID userId = UUID.fromString((String) body.get("userId"));
             String type = (String) body.get("accountType");
-            Account.AccountType accountType = Account.AccountType.valueOf(type);
-            Account account = accountService.createAccount(userId, accountType, BigDecimal.ZERO);
+            BigDecimal initialBalance = new BigDecimal(body.get("initialBalance").toString());
+            if (initialBalance.compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("Invalid account type or initial balance.");
+            }
+            Account.AccountType accountType;
+            try {
+                accountType = Account.AccountType.valueOf(type);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid account type or initial balance.");
+            }
+            Account account = accountService.createAccount(userId, accountType, initialBalance);
             Map<String, Object> resp = new HashMap<>();
             resp.put("accountId", account.getId());
             resp.put("accountNumber", account.getAccountNumber());
             resp.put("message", "Account created successfully.");
             kafkaLogProducer.sendLog(toJson(resp), "Response");
             return ResponseEntity.status(HttpStatus.CREATED).body(resp);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             Map<String, Object> error = Map.of(
                 "status", 400,
                 "error", "Bad Request",
                 "message", e.getMessage()
+            );
+            kafkaLogProducer.sendLog(toJson(error), "Response");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "status", 400,
+                "error", "Bad Request",
+                "message", "Invalid account type or initial balance."
             );
             kafkaLogProducer.sendLog(toJson(error), "Response");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -65,7 +82,7 @@ public class AccountController {
                 Map<String, Object> error = Map.of(
                     "status", 404,
                     "error", "Not Found",
-                    "message", "Account not found."
+                    "message", "Account with ID " + accountId + " not found."
                 );
                 kafkaLogProducer.sendLog(toJson(error), "Response");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
@@ -111,12 +128,19 @@ public class AccountController {
             String resJson = objectMapper.writeValueAsString(Map.of("message", "Account updated successfully."));
             kafkaLogProducer.sendLog(resJson, "Response");
             return ResponseEntity.ok(Map.of("message", "Account updated successfully."));
-        } catch (JsonProcessingException e) {
-            kafkaLogProducer.sendLog("{\"error\":\"JsonProcessingException\",\"message\":\"" + e.getMessage() + "\"}", "Response");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                "status", 400,
-                "error", "Bad Request",
-                "message", e.getMessage()
+        } catch (IllegalArgumentException e) {
+            String msg = e.getMessage();
+            int status = 400;
+            String error = "Bad Request";
+            if (msg != null && msg.contains("not found")) {
+                status = 404;
+                error = "Not Found";
+            }
+            kafkaLogProducer.sendLog("{\"error\":\"Exception\",\"message\":\"" + msg + "\"}", "Response");
+            return ResponseEntity.status(status).body(Map.of(
+                "status", status,
+                "error", error,
+                "message", msg
             ));
         } catch (Exception e) {
             kafkaLogProducer.sendLog("{\"error\":\"Exception\",\"message\":\"" + e.getMessage() + "\"}", "Response");
@@ -135,4 +159,8 @@ public class AccountController {
             return "{\"error\":\"JsonProcessingException\",\"message\":\"" + e.getMessage() + "\"}";
         }
     }
+
+
+    
+
 } 
