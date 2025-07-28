@@ -1,132 +1,83 @@
 package com.virtualbankingsystem.transaction_service.controller;
 
-import com.virtualbankingsystem.transaction_service.model.Transaction;
+import com.virtualbankingsystem.transaction_service.client.AccountClient;
+import com.virtualbankingsystem.transaction_service.dto.*;
+import com.virtualbankingsystem.transaction_service.producer.RequestLoggerProducer;
 import com.virtualbankingsystem.transaction_service.service.TransactionService;
-import com.virtualbankingsystem.transaction_service.KafkaLogProducer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/transactions")
+@RequiredArgsConstructor
 public class TransactionController {
-    @Autowired
-    private TransactionService transactionService;
-    @Autowired
-    private KafkaLogProducer kafkaLogProducer;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private String toJson(Object obj) {
-        try {
-            return objectMapper.writeValueAsString(obj);
-        } catch (Exception e) {
-            return "{\"error\":\"JsonProcessingException\",\"message\":\"" + e.getMessage() + "\"}";
-        }
-    }
+    private final TransactionService transactionService;
+    private final AccountClient accountClient;
+    private final RequestLoggerProducer logger;
 
     @PostMapping("/transfer/initiation")
-    public ResponseEntity<?> initiateTransfer(@RequestBody Map<String, Object> request) {
-        kafkaLogProducer.sendLog(toJson(request), "Request");
+    public ResponseEntity<?> initiateTransfer(@RequestBody TransferInitiationRequest request) {
+        logger.logRequest(request);
+
         try {
-            UUID fromAccountId = UUID.fromString((String) request.get("fromAccountId"));
-            UUID toAccountId = UUID.fromString((String) request.get("toAccountId"));
-            BigDecimal amount = new BigDecimal(request.get("amount").toString());
-            String description = (String) request.get("description");
-            Transaction transaction = transactionService.initiateTransfer(fromAccountId, toAccountId, amount, description);
-            Map<String, Object> response = new HashMap<>();
-            response.put("transactionId", transaction.getTransactionId());
-            response.put("status", transaction.getStatus());
-            response.put("timestamp", transaction.getTimestamp());
-            kafkaLogProducer.sendLog(toJson(response), "Response");
+            TransferInitiationResponse response = transactionService.initiateTransfer(request);
+            logger.logResponse(response);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> error = Map.of(
-                "status", 400,
-                "error", "Bad Request",
-                "message", "Invalid 'from' or 'to' account ID."
+                    "status", 400,
+                    "error", "Bad Request",
+                    "message", e.getMessage()
             );
-            kafkaLogProducer.sendLog(toJson(error), "Response");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            logger.logResponse(error);
+            return ResponseEntity.badRequest().body(error);
         }
     }
 
     @PostMapping("/transfer/execution")
-    public ResponseEntity<?> executeTransfer(@RequestBody Map<String, Object> request) {
-        kafkaLogProducer.sendLog(toJson(request), "Request");
-        try {
-            UUID transactionId = UUID.fromString((String) request.get("transactionId"));
-            boolean success = true; // Placeholder for actual logic
-            Optional<Transaction> transactionOpt = transactionService.executeTransfer(transactionId, success);
-            if (transactionOpt.isPresent()) {
-                Transaction transaction = transactionOpt.get();
-                Map<String, Object> response = new HashMap<>();
-                response.put("transactionId", transaction.getTransactionId());
-                response.put("status", transaction.getStatus());
-                response.put("timestamp", transaction.getTimestamp());
-                kafkaLogProducer.sendLog(toJson(response), "Response");
-                return ResponseEntity.ok(response);
-            } else {
-                Map<String, Object> error = Map.of(
-                    "status", 400,
-                    "error", "Bad Request",
-                    "message", "Invalid transaction ID."
-                );
-                kafkaLogProducer.sendLog(toJson(error), "Response");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-            }
-        } catch (Exception e) {
-            Map<String, Object> error = Map.of(
-                "status", 400,
-                "error", "Bad Request",
-                "message", "Invalid transaction ID."
-            );
-            kafkaLogProducer.sendLog(toJson(error), "Response");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-        }
-    }
+    public ResponseEntity<?> executeTransfer(@RequestBody TransferExecutionRequest request) {
+        logger.logRequest(request);
 
-    @GetMapping("/accounts/{accountId}/transactions")
-    public ResponseEntity<?> getTransactionsForAccount(@PathVariable String accountId) {
-        kafkaLogProducer.sendLog(toJson(accountId), "Request");
         try {
-            UUID uuid = UUID.fromString(accountId);
-            List<Transaction> transactions = transactionService.getTransactionsForAccount(uuid);
-            if (transactions.isEmpty()) {
-                Map<String, Object> error = Map.of(
-                    "status", 404,
-                    "error", "Not Found",
-                    "message", "No transactions found for account ID " + accountId + "."
-                );
-                kafkaLogProducer.sendLog(toJson(error), "Response");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-            }
-            List<Map<String, Object>> response = new ArrayList<>();
-            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-            for (Transaction t : transactions) {
-                Map<String, Object> tx = new HashMap<>();
-                tx.put("transactionId", t.getTransactionId());
-                tx.put("accountId", accountId);
-                tx.put("amount", t.getFromAccountId().equals(uuid) ? t.getAmount().negate() : t.getAmount());
-                tx.put("description", t.getDescription());
-                tx.put("timestamp", t.getTimestamp().format(formatter));
-                response.add(tx);
-            }
-            kafkaLogProducer.sendLog(toJson(response), "Response");
+            TransactionResponse response = transactionService.processTransfer(request.getTransactionId());
+            logger.logResponse(response);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> error = Map.of(
-                "status", 404,
-                "error", "Not Found",
-                "message", "No transactions found for account ID " + accountId + "."
+                    "status", 400,
+                    "error", "Transfer Execution Failed",
+                    "message", e.getMessage()
             );
-            kafkaLogProducer.sendLog(toJson(error), "Response");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            logger.logResponse(error);
+            return ResponseEntity.badRequest().body(error);
         }
     }
-} 
+
+
+    @GetMapping("/accounts/{accountId}/transactions")
+    public ResponseEntity<?> getTransactionHistory(@PathVariable UUID accountId) {
+        logger.logRequest(Map.of("accountId", accountId));
+
+        List<TransactionHistoryResponse> transactions = transactionService.getTransactionsForAccount(accountId);
+        if (transactions.isEmpty()) {
+            Map<String, Object> error = Map.of(
+                    "status", 404,
+                    "error", "Not Found",
+                    "message", "No transactions found for account ID " + accountId
+            );
+            logger.logResponse(error);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+
+        logger.logResponse(transactions);
+        return ResponseEntity.ok(transactions);
+    }
+}
