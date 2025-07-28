@@ -1,6 +1,7 @@
 package com.virtualbankingsystem.transaction_service.controller;
 
 import com.virtualbankingsystem.transaction_service.dto.*;
+import com.virtualbankingsystem.transaction_service.producer.RequestLoggerProducer;
 import com.virtualbankingsystem.transaction_service.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,19 +15,29 @@ import java.util.UUID;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final RequestLoggerProducer requestLoggerProducer;
 
     @PostMapping("/transfer/initiation")
     public ResponseEntity<?> initiateTransfer(@RequestBody TransferInitiationRequest request) {
-        return transactionService.initiateTransfer(request);
+        requestLoggerProducer.logRequest(request);
+        ResponseEntity<?> response = transactionService.initiateTransfer(request);
+        requestLoggerProducer.logResponse(response.getBody());
+        return response;
     }
 
     @PostMapping("/transfer/execution")
     public ResponseEntity<?> executeTransfer(@RequestBody TransferExecutionRequest request) {
-        return transactionService.executeTransfer(request);
+        requestLoggerProducer.logRequest(request);
+        ResponseEntity<?> response = transactionService.executeTransfer(request);
+        requestLoggerProducer.logResponse(response.getBody());
+        return response;
     }
 
     @GetMapping("/accounts/{accountId}/transactions")
     public ResponseEntity<?> getTransactions(@PathVariable UUID accountId) {
-        return transactionService.getTransactionsForAccount(accountId);
+        requestLoggerProducer.logRequest("Fetching transactions for accountId: " + accountId);
+        ResponseEntity<?> response = transactionService.getTransactionsForAccount(accountId);
+        requestLoggerProducer.logResponse(response.getBody());
+        return response;
     }
 }

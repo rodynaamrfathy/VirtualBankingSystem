@@ -1,11 +1,12 @@
 package com.virtualbankingsystem.bff_service.dto;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
 import java.util.UUID;
 
-
+@Builder
 @Data
 public class DashboardResponse {
     private UUID userId;
@@ -13,5 +14,5 @@ public class DashboardResponse {
     private String email;
     private String firstName;
     private String lastName;
-    private List<AccountResponse> accounts;
+    private List<AccountWithTransactions> accounts;
 }
