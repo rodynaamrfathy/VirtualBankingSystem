@@ -1,0 +1,42 @@
+{
+	"info": {
+		"_postman_id": "431fced9-c2c2-4f27-8f06-fc4715fb1114",
+		"name": "BFF",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46742383",
+		"_collection_link": "https://rodynaamr-9568229.postman.co/workspace/Rodyna-Amr's-Workspace~8ec6ec08-4eee-4c6d-8bce-db456125c627/collection/46742383-431fced9-c2c2-4f27-8f06-fc4715fb1114?action=share&source=collection_link&creator=46742383"
+	},
+	"item": [
+		{
+			"name": "dashboard",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"transactionId\": \"{{transactionId}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/bff/dashboard/{{userId}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"bff",
+						"dashboard",
+						"{{userId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -1,0 +1,144 @@
+{
+  "info": {
+    "_postman_id": "98afb674-e2e0-43e2-b36b-0e0a4b5d55ef",
+    "name": "vbank-gateway",
+    "description": "Gateway‑level APIs for Register, Login, Dashboard, and Transactions. Secured with OAuth2 and API‑Key; includes APP‑NAME header for PORTAL / MOBILE routing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+
+  /* ---------- COLLECTION‑WIDE SECURITY ---------- */
+  "auth": {
+    "type": "oauth2",
+    "oauth2": [
+      { "key": "accessToken", "value": "{{access_token}}", "type": "string" },
+      { "key": "addTokenTo",   "value": "header",         "type": "string" }
+    ]
+  },
+
+  "variable": [
+    { "key": "base_url",      "value": "https://localhost:8243" },
+    { "key": "access_token",  "value": "" },
+    { "key": "api_key",       "value": "" },
+    { "key": "APP_NAME",      "value": "PORTAL" },               /* change to MOBILE when testing the mobile app */
+    { "key": "userId",        "value": "11111111-1111-1111-1111-111111111111" },
+    { "key": "transactionId", "value": "33333333-3333-3333-3333-333333333333" },
+    { "key": "fromAccountId", "value": "11111111-1111-1111-1111-111111111111" },
+    { "key": "toAccountId",   "value": "22222222-2222-2222-2222-222222222222" }
+  ],
+
+  "item": [
+
+    /* ---------- 1. REGISTER ---------- */
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "x-api-key",    "value": "{{api_key}}" },
+          { "key": "APP-NAME",     "value": "{{APP_NAME}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/register",
+          "host": ["{{base_url}}"],
+          "path": ["register"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"john.doe\",\n  \"password\": \"securePassword123\",\n  \"email\": \"john.doe@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+        }
+      }
+    },
+
+    /* ---------- 2. LOGIN ---------- */
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "x-api-key",    "value": "{{api_key}}" },
+          { "key": "APP-NAME",     "value": "{{APP_NAME}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/login",
+          "host": ["{{base_url}}"],
+          "path": ["login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"john.doe\",\n  \"password\": \"securePassword123\"\n}"
+        }
+      }
+    },
+
+    /* ---------- 3. DASHBOARD ---------- */
+    {
+      "name": "Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "x-api-key",    "value": "{{api_key}}" },
+          { "key": "APP-NAME",     "value": "{{APP_NAME}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/dashboard/{{userId}}",
+          "host": ["{{base_url}}"],
+          "path": ["dashboard", "{{userId}}"]
+        }
+      }
+    },
+
+    /* ---------- 4. TRANSACTIONS ---------- */
+    {
+      "name": "Transactions",
+      "item": [
+
+        /* 4a. Initiate Transfer */
+        {
+          "name": "Initiate Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key",    "value": "{{api_key}}" },
+              { "key": "APP-NAME",     "value": "{{APP_NAME}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/initiation",
+              "host": ["{{base_url}}"],
+              "path": ["initiation"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromAccountId\": \"{{fromAccountId}}\",\n  \"toAccountId\": \"{{toAccountId}}\",\n  \"amount\": 100.00,\n  \"description\": \"Transfer from Postman\"\n}"
+            }
+          }
+        },
+
+        /* 4b. Execute Transfer */
+        {
+          "name": "Execute Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-api-key",    "value": "{{api_key}}" },
+              { "key": "APP-NAME",     "value": "{{APP_NAME}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/execution",
+              "host": ["{{base_url}}"],
+              "path": ["execution"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"{{transactionId}}\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+	"info": {
+		"_postman_id": "32871abf-471e-46de-bb5a-4d9165020adc",
+		"name": "VirtualBankingSystem - User Service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46742383",
+		"_collection_link": "https://rodynaamr-9568229.postman.co/workspace/Rodyna-Amr's-Workspace~8ec6ec08-4eee-4c6d-8bce-db456125c627/collection/46742383-32871abf-471e-46de-bb5a-4d9165020adc?action=share&source=collection_link&creator=46742383"
+	},
+	"item": [
+		{
+			"name": "Register User",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"testhola\",\n  \"password\": \"test123aa\",\n  \"email\": \"testhehe@example.com\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\"\n}\n"
+				},
+				"url": {
+					"raw": "{{baseURL}}/users/register",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"users",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login User",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"test\",\n  \"password\": \"test123\"\n}"
+				},
+				"url": {
+					"raw": "{{baseURL}}/users/login",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"users",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User By ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/users/{{userId}}/profile",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"users",
+						"{{userId}}",
+						"profile"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "http://localhost:8081",
+			"type": "default"
+		}
+	]
+}
