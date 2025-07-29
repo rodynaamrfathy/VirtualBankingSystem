@@ -1,8 +1,10 @@
 package com.virtualbankingsystem.account_service.service;
 
+import com.virtualbankingsystem.account_service.client.TransactionClient;
 import com.virtualbankingsystem.account_service.client.UserClient;
 import com.virtualbankingsystem.account_service.dto.AccountResponse;
 import com.virtualbankingsystem.account_service.dto.CreateAccountRequest;
+import com.virtualbankingsystem.account_service.dto.TransactionDto;
 import com.virtualbankingsystem.account_service.dto.TransferRequest;
 import com.virtualbankingsystem.account_service.repository.AccountRepository;
 import com.virtualbankingsystem.account_service.model.Account;
@@ -26,6 +28,8 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final UserClient userClient;
+    private final TransactionClient transactionClient;
+
 
     public AccountResponse createAccount(CreateAccountRequest request) {
         // Validate user
@@ -84,4 +88,32 @@ public class AccountService {
     private String generateAccountNumber() {
         return String.format("%010d", new Random().nextInt(1_000_000_000));
     }
+
+    @Scheduled(fixedRate = 3600000) // Runs every hour
+    @Transactional
+    public void inactivateStaleAccounts() {
+        List<Account> activeAccounts = accountRepository.findByStatus(Account.AccountStatus.ACTIVE);
+
+        for (Account account : activeAccounts) {
+            List<TransactionDto> transactions = transactionClient.getTransactionsByAccount(account.getId());
+
+            // If no transactions, skip (or optionally handle separately)
+            if (transactions.isEmpty()) continue;
+
+            // Find latest transaction timestamp
+            LocalDateTime latest = transactions.stream()
+                    .map(TransactionDto::getTimestamp)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(null);
+
+            if (latest == null) continue;
+
+            // Check if more than 24 hours passed
+            if (Duration.between(latest, LocalDateTime.now()).toHours() > 24) {
+                account.setStatus(Account.AccountStatus.INACTIVE);
+                accountRepository.save(account);
+            }
+        }
+    }
+
 }

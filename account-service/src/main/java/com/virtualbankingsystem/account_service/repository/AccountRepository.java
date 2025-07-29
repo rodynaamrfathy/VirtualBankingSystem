@@ -12,4 +12,5 @@ import java.util.UUID;
 public interface AccountRepository extends JpaRepository<Account, UUID> {
     List<Account> findByUserId(UUID userId);
     Optional<Account> findByAccountNumber(String accountNumber);
+    List<Account> findByStatus(Account.AccountStatus status);
 } 
