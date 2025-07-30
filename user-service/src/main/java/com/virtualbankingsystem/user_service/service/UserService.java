@@ -28,7 +28,7 @@ public class UserService {
 
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPasswordHash(passwordHash(request.getPassword()));
+        user.setPasswordHash(request.getPassword()); // Already hashed
         user.setEmail(request.getEmail());
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -41,6 +41,7 @@ public class UserService {
                 "User registered successfully."
         );
     }
+
 
     private String passwordHash(String password) {
         return BCrypt.hashpw(password, BCrypt.gensalt());

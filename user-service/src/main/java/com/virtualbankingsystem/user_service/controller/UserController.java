@@ -5,6 +5,7 @@ import com.virtualbankingsystem.user_service.producer.RequestLoggerProducer;
 import com.virtualbankingsystem.user_service.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -26,11 +27,23 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
-        loggerProducer.logRequest(request); // Log the incoming request
+        // Hash password before logging
+        String hashedPassword = BCrypt.hashpw(request.getPassword(), BCrypt.gensalt());
 
-        RegisterResponse response = userService.registerUser(request); // service
+        // Create a new request object with the hashed password (avoid logging the original one)
+        RegisterRequest safeRequest = new RegisterRequest(
+                request.getUsername(),
+                hashedPassword,
+                request.getEmail(),
+                request.getFirstName(),
+                request.getLastName()
+        );
 
-        loggerProducer.logResponse(response); // Log the outgoing response
+        loggerProducer.logRequest(safeRequest); // Log request with hashed password
+
+        RegisterResponse response = userService.registerUser(safeRequest); // Proceed with hashed password
+
+        loggerProducer.logResponse(response); // Log the response
         return ResponseEntity.status(201).body(response);
     }
 
